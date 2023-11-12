@@ -1,0 +1,19 @@
+{{define "registrationForm"}}
+{{template "header"}}
+<main class="px-3">
+    <form action="/registration" method="post">
+        <h1 class="h3 mb-3 fw-normal">Заполните анкету для регистрации</h1>
+        <input type="text" name="name" class="form-control" id="name" placeholder="Имя"><br>
+        <input type="text" name="age" class="form-control" id="age" placeholder="Возраст"><br>
+        <input type="text" name="surname" class="form-control" id="surname" placeholder="Фамилия"><br>
+        <input type="text" name="sex" class="form-control" id="sex" placeholder="Пол"><br>
+        <input type="text" name="city" class="form-control" id="city" placeholder="Город проживания"><br>
+        <input type="text" name="hobbies" class="form-control" id="hobbies" placeholder="Увлечения через запятую"><br>
+        <input type="email" name="email" class="form-control" id="email" placeholder="name@example.com"><br>
+        <input type="password" name="password" class="form-control" id="password" placeholder="Password"><br>
+
+        <button class="btn btn-warning">Регистрация</button><br><br>
+    </form>
+</main>
+{{template "footer"}}
+{{end}}

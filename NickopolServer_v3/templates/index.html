@@ -1,0 +1,20 @@
+{{define "index"}}
+{{template "header" .Customer}}
+<main class="px-3">
+<h1>Главная страница</h1>
+<p>Пользователь зарегистрирован: {{.Customer.IsAuthorized}}</p>
+<!-- Для вставки рандомного текста: прописать Lorem + Tab-->
+<p class="lead">Lorem ipsum dolor sit amet consectetur adipisicing elit. Minima earum minus beatae nulla eum cum libero assumenda quasi alias labore illum reiciendis, provident pariatur numquam natus nobis voluptatibus tempora ratione?</p>
+        {{range .Posts}}
+            <div class="alert alert-danger">
+                <h2>{{ .Title}}</h2>
+                <p>{{ .Anons}}</p>
+                <p><span>User_Id: {{ .UserId}}</span></p>
+                <a href="/post/{{.Id}}" class="btn btn-danger">Читать далее</a>
+            </div>
+            {{else}}
+            <p class="lead">Статей нет</p>
+            {{end}}
+
+{{template "footer"}}
+{{end}}
