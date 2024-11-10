@@ -4,7 +4,7 @@
     <p>Пользователь зарегистрирован: {{.Customer.IsAuthorized}}</p>
     {{if eq .Customer.IsAuthorized true}}
         {{range .Users}}
-        <div class="alert alert-success">
+        <div class="alert alert-danger">
             <h2>ID пользователя: {{.Id}}</h2>
             <p class="lead">Имя: {{.Name}}</p>
             <p class="lead">Фамилия: {{.Surname}}</p>

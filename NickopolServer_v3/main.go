@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os" // добавьте этот импорт, если его нет
 
 	"github.com/gorilla/mux"
 
@@ -35,6 +36,21 @@ var article = Article{}
 var userInfo = User{}
 var customer = User{}
 
+func getDBConnection() (*sql.DB, error) {
+    dbUser := os.Getenv("DB_USER")
+    dbPassword := os.Getenv("DB_PASSWORD")
+    dbHost := os.Getenv("DB_HOST")
+    dbPort := os.Getenv("DB_PORT")
+    dbName := os.Getenv("DB_NAME")
+
+    dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbHost, dbPort, dbName)
+    db, err := sql.Open("mysql", dsn)
+    if err != nil {
+        return nil, err
+    }
+    return db, nil
+}
+
 func index(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles("templates/index.html", "templates/header.html",
 		"templates/footer.html", "templates/login.html")
@@ -42,7 +58,8 @@ func index(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, err.Error())
 	}
 
-	db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
+	// db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
+	db, err := getDBConnection()
 	if err != nil {
 		panic(err)
 	}
@@ -79,7 +96,8 @@ func usersForms(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, err.Error())
 	}
 
-	db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
+	// db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
+	db, err := getDBConnection()
 	if err != nil {
 		panic(err)
 	}
@@ -128,7 +146,8 @@ func showPost(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, err.Error())
 	}
 
-	db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
+	// db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
+	db, err := getDBConnection()
 	if err != nil {
 		panic(err)
 	}
@@ -165,7 +184,8 @@ func showUserForm(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, err.Error())
 	}
 
-	db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
+	// db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
+	db, err := getDBConnection()
 	if err != nil {
 		panic(err)
 	}
@@ -203,7 +223,8 @@ func saveArticle(w http.ResponseWriter, r *http.Request) {
 	if title == "" || anons == "" || text == "" {
 		fmt.Fprintf(w, "Не все данные заполненны")
 	} else {
-		db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
+		// db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
+		db, err := getDBConnection()
 		if err != nil {
 			panic(err)
 		}
@@ -230,7 +251,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, err.Error())
 	}
 
-	//fmt.Printf("login --> user : %v\n", customer)
+	// fmt.Printf("login --> user : %v\n", customer)
 	t.ExecuteTemplate(w, "login", customer)
 }
 
@@ -244,7 +265,8 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	passwordForm := r.FormValue("password")
 	//fmt.Printf("\nemail : %s\n", email)
 
-	db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
+	// db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
+	db, err := getDBConnection()
 	if err != nil {
 		panic(err)
 	}
@@ -312,7 +334,8 @@ func registration(w http.ResponseWriter, r *http.Request) {
 	if userName == "" || userAge == "" || userSurname == "" || userSex == "" || userCity == "" || userHobbies == "" || userEmail == "" || userPassword == "" {
 		fmt.Fprintf(w, "Не все данные заполненны")
 	} else {
-		db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
+		// db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
+		db, err := getDBConnection()
 		if err != nil {
 			panic(err)
 		}
@@ -335,7 +358,7 @@ func registration(w http.ResponseWriter, r *http.Request) {
 
 func handleFunc() {
 	rtr := mux.NewRouter()
-	fmt.Println("Сервер запущен на http://localhost:8080")
+	fmt.Println("Сервер запущен на http://localhost:80")
 	rtr.HandleFunc("/", index).Methods("GET") //указав Methods("GET") мы защищаем наш сервер от ввода запросов ч другими методами
 	rtr.HandleFunc("/usersForms", usersForms).Methods("GET")
 	rtr.HandleFunc("/create", create).Methods("GET")
@@ -351,7 +374,7 @@ func handleFunc() {
 	http.Handle("/", rtr)
 	//обработчик всех файлов со стилями в папке /static
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":80", nil)
 }
 
 func main() {
@@ -359,6 +382,5 @@ func main() {
 	handleFunc()
 }
 
-//todo Почему-то если ввести не верный пароль существующему пользаку - все равно выводится вся информация по нему
 //todo при нажатии на User_Id в статьях сделать переход на анкету пользователя
 //todo сделать чтобы выводилось по 10 статей на главной

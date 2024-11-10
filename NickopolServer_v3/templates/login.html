@@ -1,7 +1,7 @@
 {{define "login"}}
 {{template "header" .}}
 <main class="px-3">
-    <form action="/get_user" method="post">
+    <form id="loginForm" action="/get_user" method="post" onsubmit="return validateForm()">
         <h1 class="h3 mb-3 fw-normal">Авторизуйтесь</h1>
         <input type="email" name="email" class="form-control" id="email" placeholder="name@example.com"><br>
         <input type="password" name="password" class="form-control" id="password" placeholder="Password">
@@ -12,10 +12,23 @@
                 Remember me
             </label>
         </div>
-        <button class="btn btn-warning">Авторизоваться</button>
+        <button type="submit" class="btn btn-warning">Авторизоваться</button>
         <a class="btn btn-warning" href="/registration_form" class="button">Регистрация</a><br><br>
     </form>
 </main>
-</main>
+
+<script>
+    function validateForm() {
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value.trim();
+        
+        if (email === "" || password === "") {
+            alert("Пожалуйста, заполните все поля.");
+            return false; // предотвращает отправку формы
+        }
+        
+        return true; // форма отправляется, если все поля заполнены
+    }
+</script>
 {{template "footer"}}
 {{end}}

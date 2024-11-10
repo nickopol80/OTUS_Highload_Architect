@@ -1,0 +1,28 @@
+{{define "usersForms"}}
+{{template "header" .Customer}}
+<main class="px-3">
+    <p>Пользователь зарегистрирован: {{.Customer.IsAuthorized}}</p>
+    {{if eq .Customer.IsAuthorized true}}
+        {{range .Users}}
+        <div class="alert alert-danger">
+            <h2>ID пользователя: {{.Id}}</h2>
+            <p class="lead">Имя: {{.Name}}</p>
+            <p class="lead">Фамилия: {{.Surname}}</p>
+            <p class="lead">Возраст: {{.Age}}</p>
+<!--            <p class="lead">Пол: {{.Sex}}</p>-->
+<!--            <p class="lead">Город: {{.City}}</p>-->
+<!--            <p class="lead">Увлечения: {{.Hobbies}}</p>-->
+<!--            <p class="lead">Почта: {{.Email}}</p>-->
+            <a class="btn btn-warning" href="/userForm/{{.Id}}" class="button">Подробнее</a><br><br>
+        </div>
+        {{else}}
+        <p class="lead">Нет анкет</p>
+        {{end}}
+    {{else}}
+    <a class="btn btn-warning" href="/login" class="button">Для просмотра анкет необходио авторизоваться</a><br><br>
+    {{end}}
+
+</main>
+
+{{template "footer"}}
+{{end}}

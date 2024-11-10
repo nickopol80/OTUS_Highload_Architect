@@ -1,0 +1,20 @@
+:root {
+    --color1: #2dd317;
+    --color2: #a717af;
+}
+
+header {
+    margin-bottom: 70px;
+    color: var(--color1);
+}
+
+title {
+    color: var(--color2);
+}
+
+body{
+    text-shadow: 0 0 black !important;
+}
+.pol_header {
+    margin-bottom: 70px;
+}
