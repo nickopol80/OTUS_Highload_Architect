@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"encoding/json"
+	"log"
 	"os" // добавьте этот импорт, если его нет
 
 	"github.com/gorilla/mux"
@@ -37,7 +39,15 @@ var userInfo = User{}
 var customer = User{}
 
 func getDBConnection() (*sql.DB, error) {
-    dbUser := os.Getenv("DB_USER")
+	//для отладки локално (не через контейнер)
+    // dbUser := "root"
+    // dbPassword := "root"
+    // dbHost := "localhost"
+    // dbPort :="3306"
+    // dbName := "nickopolis"
+
+	// для запуска в контейнере
+	dbUser := os.Getenv("DB_USER")
     dbPassword := os.Getenv("DB_PASSWORD")
     dbHost := os.Getenv("DB_HOST")
     dbPort := os.Getenv("DB_PORT")
@@ -105,7 +115,7 @@ func usersForms(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	//Выборка данных
-	res, err := db.Query("select * from users;")
+	res, err := db.Query("select * from users ORDER BY RAND() LIMIT 10;")
 	if err != nil {
 		panic(err)
 	}
@@ -356,10 +366,99 @@ func registration(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "#", http.StatusSeeOther)
 }
 
+func searchUserHandler(w http.ResponseWriter, r *http.Request) {
+    // Извлечение параметров запроса
+    name := r.URL.Query().Get("name")
+    surname := r.URL.Query().Get("surname")
+
+    if name == "" && surname == "" {
+        http.Error(w, "Необходимо указать хотя бы одно из полей: name или surname", http.StatusBadRequest)
+        return
+    }
+
+    // Формирование запроса с учетом переданных параметров
+    query := "SELECT id, name, surname, age, sex, city, hobbies, email FROM users WHERE 1=1"
+    var args []interface{}
+
+    if name != "" {
+        query += " AND name LIKE ?"
+        args = append(args, "%"+name+"%")
+    }
+    if surname != "" {
+        query += " AND surname LIKE ?"
+        args = append(args, "%"+surname+"%")
+    }
+
+	db, err := getDBConnection()
+	if err != nil {
+		log.Println(err)
+	}
+
+	defer db.Close()
+
+    rows, err := db.Query(query, args...)
+    if err != nil {
+        http.Error(w, "Ошибка выполнения запроса к базе данных", http.StatusInternalServerError)
+		log.Println(err)
+        return
+    }
+    defer rows.Close()
+
+    // Чтение результатов и формирование ответа
+    var results []map[string]string
+    for rows.Next() {
+        var id int
+        var userName, userSurname, age, sex, city, hobbies, email string
+        if err := rows.Scan(&id, &userName, &userSurname, &age, &sex, &city, &hobbies, &email); err != nil {
+            http.Error(w, "Ошибка чтения результата", http.StatusInternalServerError)
+            log.Println(err)
+            return
+        }
+        results = append(results, map[string]string{
+            "id":      fmt.Sprint(id),
+            "name":    userName,
+            "surname": userSurname,
+			"age": age,
+			"sex": sex,
+			"city": city,
+			"hobbies": hobbies,
+			"email": email,
+        })
+    }
+
+	// Установка заголовков для ответа в формате JSON
+	w.Header().Set("Content-Type", "application/json")
+
+    if len(results) == 0 {
+        fmt.Fprintln(w, "Пользователи не найдены")
+        return
+    }
+
+	// Сериализация данных с отступами для json
+	jsonData, err := json.MarshalIndent(results, "", "    ")
+	if err != nil {
+		http.Error(w, "Ошибка при создании JSON", http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	w.Write(jsonData)
+}
+
+func users(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/users.html", "templates/header.html", "templates/footer.html")
+	if err != nil {
+		fmt.Fprintln(w, err.Error())
+	}
+
+	t.ExecuteTemplate(w, "users", customer)
+}
+
 func handleFunc() {
 	rtr := mux.NewRouter()
 	fmt.Println("Сервер запущен на http://localhost:80")
-	rtr.HandleFunc("/", index).Methods("GET") //указав Methods("GET") мы защищаем наш сервер от ввода запросов ч другими методами
+	// Обработчик для favicon.ico
+	rtr.HandleFunc("/", index).Methods("GET") //указав Methods("GET") мы защищаем наш сервер от ввода запросов c другими методами
 	rtr.HandleFunc("/usersForms", usersForms).Methods("GET")
 	rtr.HandleFunc("/create", create).Methods("GET")
 	rtr.HandleFunc("/login", login)
@@ -370,10 +469,16 @@ func handleFunc() {
 	rtr.HandleFunc("/save_article", saveArticle).Methods("POST")
 	rtr.HandleFunc("/post/{id:[0-9]+}", showPost).Methods("GET", "PUT")
 	rtr.HandleFunc("/userForm/{id:[0-9]+}", showUserForm).Methods("GET")
+	rtr.HandleFunc("/users", users).Methods("GET")
+	rtr.HandleFunc("/users/search", searchUserHandler).Methods("GET")
 
 	http.Handle("/", rtr)
+	// Обработчик для favicon.ico
+	http.Handle("/favicon.ico", http.FileServer(http.Dir("./static")))
+	// Обработчик для папки css
+    http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("./css"))))
 	//обработчик всех файлов со стилями в папке /static
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
+	// http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
 	http.ListenAndServe(":80", nil)
 }
 

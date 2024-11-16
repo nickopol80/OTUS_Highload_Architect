@@ -1,0 +1,82 @@
+{{define "users"}}
+{{template "header" .}}
+<main class="px-3">
+    {{if eq .IsAuthorized true}}
+    <title>Поиск пользователей</title>
+    <!-- <form id="users" action="/users/search" method=" get" onsubmit="return validateForm()"> -->
+    <form id="searchForm">
+    <h1 class="h3 mb-3 fw-normal">Введите данные для поиска</h1>
+        <input type="text" name="name" class="form-control" id="name" placeholder="Имя"><br>
+        <input type="text" name="surname" class="form-control" id="surname" placeholder="Фамилия"><br>
+        <button type="submit" class="btn btn-warning">Найти</button>
+    </form>
+</br>
+</main>
+
+<h2>Результаты поиска:</h2>
+    <div id="results"></div>
+    {{else}}
+    <a class="btn btn-warning" href="/login" class="button">Для просмотра анкет необходио авторизоваться</a><br><br>
+    {{end}}
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            // Получение значений полей формы
+            const name = document.getElementById('name').value.trim();
+            const surname = document.getElementById('surname').value.trim();
+        
+            // Проверка на пустые поля
+            if (name === "" && surname === "") {
+                alert('Необходимо указать хотя бы одно из полей: name или surname');
+                return; // Прекращает выполнение функции, если оба поля пустые
+            }
+        
+            // Формирование URL для запроса
+            let url = `/users/search?`;
+            if (name) url += `name=${encodeURIComponent(name)}&`;
+            if (surname) url += `surname=${encodeURIComponent(surname)}`;
+        
+            // Выполнение запроса и отображение результатов
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+        
+                const resultsContainer = document.getElementById('results');
+                resultsContainer.innerHTML = ''; // Очистка предыдущих результатов
+                
+                if (response.ok && data.length > 0) {
+                    // Создание таблицы для вывода данных
+                    const table = document.createElement('table');
+                    const headerRow = document.createElement('tr');
+                    ['ID', 'Имя', 'Фамилия', 'Пол', 'Возраст', 'Город', 'Увлечения', 'Email'].forEach(text => {
+                        const th = document.createElement('th');
+                        th.textContent = text;
+                        headerRow.appendChild(th);
+                    });
+                    table.appendChild(headerRow);
+        
+                    // Заполнение таблицы данными
+                    data.forEach(user => {
+                        const row = document.createElement('tr');
+                        ['id', 'name', 'surname', 'sex', 'age', 'city', 'hobbies', 'email'].forEach(key => {
+                            const td = document.createElement('td');
+                            td.textContent = user[key] || 'N/A';
+                            row.appendChild(td);
+                        });
+                        table.appendChild(row);
+                    });
+        
+                    resultsContainer.appendChild(table);
+                } else {
+                    resultsContainer.textContent = 'Пользователи не найдены.';
+                }
+            } catch (error) {
+                console.error('Ошибка при выполнении запроса:', error);
+                document.getElementById('results').textContent = 'Данных не найдено.';
+            }
+        });        
+    </script>
+{{template "footer"}}
+{{end}}
