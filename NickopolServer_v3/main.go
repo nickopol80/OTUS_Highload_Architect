@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"encoding/json"
 	"log"
-	"os" // добавьте этот импорт, если его нет
+	// "os" // добавьте этот импорт, если его нет
 
 	"github.com/gorilla/mux"
 
@@ -20,8 +20,8 @@ type Article struct {
 }
 
 type User struct {
-	Id, Age, Name, Surname, Sex, City, Hobbies, Email, Password string
-	IsAuthorized                                                bool
+	Id, Birthday, Name, Surname, Sex, City, Hobbies, Email, Password string
+	IsAuthorized                                                	 bool
 }
 
 type DataPage struct {
@@ -39,21 +39,18 @@ var userInfo = User{}
 var customer = User{}
 
 func getDBConnection() (*sql.DB, error) {
-	//для отладки локално (не через контейнер)
-    // dbUser := "root"
-    // dbPassword := "root"
-    // dbHost := "localhost"
-    // dbPort :="3306"
-    // dbName := "nickopolis"
 
 	// для запуска в контейнере
-	dbUser := os.Getenv("DB_USER")
-    dbPassword := os.Getenv("DB_PASSWORD")
-    dbHost := os.Getenv("DB_HOST")
-    dbPort := os.Getenv("DB_PORT")
-    dbName := os.Getenv("DB_NAME")
+	// dbUser := os.Getenv("DB_USER")
+    // dbPassword := os.Getenv("DB_PASSWORD")
+    // dbHost := os.Getenv("DB_HOST")
+    // dbPort := os.Getenv("DB_PORT")
+    // dbName := os.Getenv("DB_NAME")
+	// dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbHost, dbPort, dbName)
 
-    dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbHost, dbPort, dbName)
+	// для отладки локално (не через контейнер)
+    dsn := "root:root@tcp(localhost:3306)/nickopolis"
+
     db, err := sql.Open("mysql", dsn)
     if err != nil {
         return nil, err
@@ -123,7 +120,7 @@ func usersForms(w http.ResponseWriter, r *http.Request) {
 	var usersForms = []User{} //Чтоб не дублировались одни и теже посты при обновлении страницы
 	for res.Next() {
 		var user User
-		err = res.Scan(&user.Id, &user.Name, &user.Age, &user.Surname, &user.Sex, &user.City, &user.Hobbies, &user.Email, &user.Password)
+		err = res.Scan(&user.Id, &user.Name, &user.Surname, &user.Sex, &user.City, &user.Hobbies, &user.Email, &user.Password, &user.Birthday)
 		if err != nil {
 			panic(err)
 		}
@@ -211,7 +208,7 @@ func showUserForm(w http.ResponseWriter, r *http.Request) {
 	userInfo = User{}
 	for res.Next() {
 		var user User
-		err = res.Scan(&user.Id, &user.Name, &user.Age, &user.Surname, &user.Sex, &user.City, &user.Hobbies, &user.Email, &user.Password)
+		err = res.Scan(&user.Id, &user.Name, &user.Surname, &user.Sex, &user.City, &user.Hobbies, &user.Email, &user.Password, &user.Birthday)
 		if err != nil {
 			panic(err)
 		}
@@ -273,7 +270,7 @@ func logout(w http.ResponseWriter, r *http.Request) {
 func getUser(w http.ResponseWriter, r *http.Request) {
 	emailForm := r.FormValue("email")
 	passwordForm := r.FormValue("password")
-	//fmt.Printf("\nemail : %s\n", email)
+	// fmt.Printf("\nemail : %s\n", emailForm)
 
 	// db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
 	db, err := getDBConnection()
@@ -292,7 +289,7 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	//customer = User{}
 	for res.Next() {
 		var user User
-		err = res.Scan(&user.Id, &user.Name, &user.Age, &user.Surname, &user.Sex, &user.City, &user.Hobbies, &user.Email, &user.Password)
+		err = res.Scan(&user.Id, &user.Name, &user.Surname, &user.Sex, &user.City, &user.Hobbies, &user.Email, &user.Password, &user.Birthday)
 		if err != nil {
 			panic(err)
 		}
@@ -333,7 +330,7 @@ func registrationForm(w http.ResponseWriter, r *http.Request) {
 
 func registration(w http.ResponseWriter, r *http.Request) {
 	userName := r.FormValue("name")
-	userAge := r.FormValue("age")
+	userBirthday := r.FormValue("birthday")
 	userSurname := r.FormValue("surname")
 	userSex := r.FormValue("sex")
 	userCity := r.FormValue("city")
@@ -341,7 +338,7 @@ func registration(w http.ResponseWriter, r *http.Request) {
 	userEmail := r.FormValue("email")
 	userPassword := r.FormValue("password")
 
-	if userName == "" || userAge == "" || userSurname == "" || userSex == "" || userCity == "" || userHobbies == "" || userEmail == "" || userPassword == "" {
+	if userName == "" || userBirthday == "" || userSurname == "" || userSex == "" || userCity == "" || userHobbies == "" || userEmail == "" || userPassword == "" {
 		fmt.Fprintf(w, "Не все данные заполненны")
 	} else {
 		// db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
@@ -353,8 +350,8 @@ func registration(w http.ResponseWriter, r *http.Request) {
 		defer db.Close()
 
 		//Установка данных
-		insert, err := db.Query(fmt.Sprintf("INSERT INTO users (`name`, `age`, `surname`, `sex`, `city`, `hobbies`, `email`, `password`) VALUES('%s', '%s', '%s', '%s','%s', '%s', '%s', '%s');",
-			userName, userAge, userSurname, userSex, userCity, userHobbies, userEmail, userPassword))
+		insert, err := db.Query(fmt.Sprintf("INSERT INTO users (`name`, `birthday`, `surname`, `sex`, `city`, `hobbies`, `email`, `password`) VALUES('%s', '%s', '%s', '%s','%s', '%s', '%s', '%s');",
+			userName, userBirthday, userSurname, userSex, userCity, userHobbies, userEmail, userPassword))
 		if err != nil {
 			panic(err)
 		}
@@ -377,16 +374,16 @@ func searchUserHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     // Формирование запроса с учетом переданных параметров
-    query := "SELECT id, name, surname, age, sex, city, hobbies, email FROM users WHERE 1=1"
+    query := "SELECT id, name, surname, birthday, sex, city, hobbies, email FROM users WHERE 1=1"
     var args []interface{}
 
     if name != "" {
         query += " AND name LIKE ?"
-        args = append(args, "%"+name+"%")
+        args = append(args, name+"%")
     }
     if surname != "" {
         query += " AND surname LIKE ?"
-        args = append(args, "%"+surname+"%")
+        args = append(args, surname+"%")
     }
 
 	db, err := getDBConnection()
@@ -408,8 +405,8 @@ func searchUserHandler(w http.ResponseWriter, r *http.Request) {
     var results []map[string]string
     for rows.Next() {
         var id int
-        var userName, userSurname, age, sex, city, hobbies, email string
-        if err := rows.Scan(&id, &userName, &userSurname, &age, &sex, &city, &hobbies, &email); err != nil {
+        var userName, userSurname, birthday, sex, city, hobbies, email string
+        if err := rows.Scan(&id, &userName, &userSurname, &birthday, &sex, &city, &hobbies, &email); err != nil {
             http.Error(w, "Ошибка чтения результата", http.StatusInternalServerError)
             log.Println(err)
             return
@@ -418,7 +415,7 @@ func searchUserHandler(w http.ResponseWriter, r *http.Request) {
             "id":      fmt.Sprint(id),
             "name":    userName,
             "surname": userSurname,
-			"age": age,
+			"birthday": birthday,
 			"sex": sex,
 			"city": city,
 			"hobbies": hobbies,
