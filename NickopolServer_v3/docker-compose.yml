@@ -31,6 +31,8 @@ services:
         retries: 3
     volumes:
       - db_data:/var/lib/mysql
+      # - ./mysql_data:/var/lib/mysql
+      
 
   adminer:
     image: adminer
