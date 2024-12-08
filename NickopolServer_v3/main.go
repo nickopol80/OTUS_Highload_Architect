@@ -3,6 +3,9 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"math/rand"
+	"sync"
+	"time"
 	"html/template"
 	"net/http"
 	"encoding/json"
@@ -34,50 +37,132 @@ type DataFormPage struct {
 	Users    []User
 }
 
+// Глобальные переменные для БД
+var masterDB *sql.DB
+var replicaDBs []*sql.DB
+var customer = User{}
+var mutex sync.Mutex
+
 var article = Article{}
 var userInfo = User{}
-var customer = User{}
 
-func getDBConnection() (*sql.DB, error) {
+func waitForDB(dsn string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for {
+		if time.Now().After(deadline) {
+			return fmt.Errorf("время ожидания подключения к БД истекло")
+		}
 
-	// для запуска в контейнере
-	dbUser := os.Getenv("DB_USER")
-    dbPassword := os.Getenv("DB_PASSWORD")
-    dbHost := os.Getenv("DB_HOST")
-    dbPort := os.Getenv("DB_PORT")
-    dbName := os.Getenv("DB_NAME")
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbHost, dbPort, dbName)
+		db, err := sql.Open("mysql", dsn)
+		if err == nil && db.Ping() == nil {
+			log.Println("База данных готова")
+			return nil
+		}
 
-	// для отладки локално (не через контейнер)
-    // dsn := "root:root@tcp(localhost:3306)/nickopolis"
-
-    db, err := sql.Open("mysql", dsn)
-    if err != nil {
-        return nil, err
-    }
-    return db, nil
+		log.Println("Ожидание готовности базы данных...")
+		time.Sleep(2 * time.Second)
+	}
 }
+
+// Инициализация соединений с базами данных
+func initDBConnections() {
+	var err error
+
+	// Соединение с Master
+	masterDSN := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("DB_NAME"),
+	)
+	masterDB, err = sql.Open("mysql", masterDSN)
+	if err != nil {
+		log.Fatalf("Ошибка подключения к Master БД: %v", err)
+	}
+
+	// Хосты реплик
+	replicaHosts := []string{"slave1", "slave2"} // Указываем хосты реплик из docker-compose.yml
+
+	// Подключение к Replica
+	for _, host := range replicaHosts {
+		replicaDSN := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
+			os.Getenv("DB_USER"),
+			os.Getenv("DB_PASSWORD"),
+			host,
+			os.Getenv("DB_PORT"),
+			os.Getenv("DB_NAME"),
+		)
+		replicaDB, err := sql.Open("mysql", replicaDSN)
+		if err != nil {
+			log.Printf("Ошибка подключения к Replica (%s): %v", host, err)
+			continue
+		}
+		// Проверка соединения
+		if err = replicaDB.Ping(); err != nil {
+			log.Printf("Ошибка соединения с Replica (%s): %v", host, err)
+			continue
+		}
+		replicaDBs = append(replicaDBs, replicaDB)
+	}
+
+	if len(replicaDBs) == 0 {
+		log.Fatal("Нет доступных реплик для чтения")
+	}
+
+	log.Println("Соединения с базами данных успешно инициализированы")
+}
+
+// Получить соединение с Master для записи
+func getMasterDB() *sql.DB {
+	return masterDB
+}
+
+// Получить соединение с Replica для чтения
+func getReplicaDB() *sql.DB {
+    mutex.Lock()
+    defer mutex.Unlock()
+
+    if len(replicaDBs) == 0 {
+        log.Println("Нет доступных реплик для чтения")
+        return nil
+    }
+
+    rand.Seed(time.Now().UnixNano())
+    db := replicaDBs[rand.Intn(len(replicaDBs))]
+
+    // Проверяем соединение
+    if err := db.Ping(); err != nil {
+        log.Printf("Реплика недоступна: %v", err)
+        return nil
+    }
+
+    return db
+}
+
 
 func index(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles("templates/index.html", "templates/header.html",
 		"templates/footer.html", "templates/login.html")
 	if err != nil {
 		fmt.Fprintln(w, err.Error())
+		return
 	}
 
 	// db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
-	db, err := getDBConnection()
-	if err != nil {
-		panic(err)
+	db := getReplicaDB()
+	if db == nil {
+		http.Error(w, "База данных временно недоступна", http.StatusInternalServerError)
+		return
 	}
-
-	defer db.Close()
 
 	//Выборка данных
 	res, err := db.Query("select * from articles;")
 	if err != nil {
 		panic(err)
 	}
+
+	defer res.Close()
 
 	var posts = []Article{} //Чтоб не дублировались одни и теже посты при обновлении страницы
 	for res.Next() {
@@ -101,15 +186,15 @@ func usersForms(w http.ResponseWriter, r *http.Request) {
 		"templates/footer.html", "templates/login.html")
 	if err != nil {
 		fmt.Fprintln(w, err.Error())
+		return
 	}
 
 	// db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
-	db, err := getDBConnection()
-	if err != nil {
-		panic(err)
+	db := getReplicaDB()
+	if db == nil {
+		http.Error(w, "База данных временно недоступна", http.StatusInternalServerError)
+		return
 	}
-
-	defer db.Close()
 
 	//Выборка данных
 	res, err := db.Query("select * from users ORDER BY RAND() LIMIT 10;")
@@ -154,12 +239,11 @@ func showPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
-	db, err := getDBConnection()
-	if err != nil {
-		panic(err)
+	db := getReplicaDB()
+	if db == nil {
+		http.Error(w, "База данных временно недоступна", http.StatusInternalServerError)
+		return
 	}
-
-	defer db.Close()
 
 	//Выборка данных
 	res, err := db.Query(fmt.Sprintf("SELECT * FROM articles WHERE id = '%s';", vars["id"]))
@@ -192,12 +276,11 @@ func showUserForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
-	db, err := getDBConnection()
-	if err != nil {
-		panic(err)
+	db := getReplicaDB()
+	if db == nil {
+		http.Error(w, "База данных временно недоступна", http.StatusInternalServerError)
+		return
 	}
-
-	defer db.Close()
 
 	//Выборка данных
 	res, err := db.Query(fmt.Sprintf("SELECT * FROM users WHERE id = '%s';", vars["id"]))
@@ -231,11 +314,7 @@ func saveArticle(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Не все данные заполненны")
 	} else {
 		// db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
-		db, err := getDBConnection()
-		if err != nil {
-			panic(err)
-		}
-
+		db := getMasterDB()
 		defer db.Close()
 
 		//Установка данных
@@ -273,12 +352,11 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	// fmt.Printf("\nemail : %s\n", emailForm)
 
 	// db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
-	db, err := getDBConnection()
-	if err != nil {
-		panic(err)
+	db := getReplicaDB()
+	if db == nil {
+		http.Error(w, "База данных временно недоступна", http.StatusInternalServerError)
+		return
 	}
-
-	defer db.Close()
 
 	//Проверка наличие зарегистрированного пользователя
 	res, err := db.Query(fmt.Sprintf("SELECT * FROM users WHERE email = '%s';", emailForm))
@@ -342,11 +420,7 @@ func registration(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Не все данные заполненны")
 	} else {
 		// db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/nickopolis")
-		db, err := getDBConnection()
-		if err != nil {
-			panic(err)
-		}
-
+		db := getMasterDB()
 		defer db.Close()
 
 		//Установка данных
@@ -386,12 +460,11 @@ func searchUserHandler(w http.ResponseWriter, r *http.Request) {
         args = append(args, surname+"%")
     }
 
-	db, err := getDBConnection()
-	if err != nil {
-		log.Println(err)
+	db := getReplicaDB()
+	if db == nil {
+		http.Error(w, "База данных временно недоступна", http.StatusInternalServerError)
+		return
 	}
-
-	defer db.Close()
 
     rows, err := db.Query(query, args...)
     if err != nil {
@@ -480,8 +553,16 @@ func handleFunc() {
 }
 
 func main() {
-	customer = User{}
-	handleFunc()
+    customer = User{}
+    initDBConnections()
+	dsn := "root:root@tcp(mysql-master:3306)/nickopolis"
+	if err := waitForDB(dsn, 60*time.Second); err != nil {
+		log.Fatalf("Не удалось подключиться к базе данных: %v", err)
+	}
+
+	log.Println("Базы данных готовы, запускаю приложение...")
+
+    handleFunc()
 }
 
 //todo при нажатии на User_Id в статьях сделать переход на анкету пользователя
