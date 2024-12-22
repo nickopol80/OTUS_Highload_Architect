@@ -1,18 +1,20 @@
 {{define "usersForms"}}
 {{template "header" .Customer}}
 <main class="px-3">
-<p>Анкеты случайных 10 пользователей</p>
+<a class="btn btn-warning" href="/users" style="float: right;">Поиск по имени и фамилии</a><br><br>
+<h1 class="h3 mb-3 fw-normal">Анкеты случайных 10 пользователей</h1>
     <!-- <p>Пользователь зарегистрирован: {{.Customer.IsAuthorized}}</p> -->
     {{if eq .Customer.IsAuthorized true}}
         {{range .Users}}
         <div class="alert alert-danger">
             <h2>ID пользователя: {{.Id}}</h2>
-            <p class="lead">Имя: {{.Name}}</p>
-            <p class="lead">Фамилия: {{.Surname}}</p>
+            <p class="lead">{{.Name}} {{.Surname}}</p>
+            <!-- <p class="lead">Имя: {{.Name}}</p> -->
+            <!-- <p class="lead">Фамилия: {{.Surname}}</p> -->
             <p class="lead">День рождения: {{.Birthday}}</p>
 <!--            <p class="lead">Пол: {{.Sex}}</p>-->
-<!--            <p class="lead">Город: {{.City}}</p>-->
-<!--            <p class="lead">Увлечения: {{.Hobbies}}</p>-->
+           <p class="lead">Город: {{.City}}</p>
+           <p class="lead">Увлечения: {{.Hobbies}}</p>
 <!--            <p class="lead">Почта: {{.Email}}</p>-->
             <a class="btn btn-warning" href="/userForm/{{.Id}}" class="button">Подробнее</a><br><br>
         </div>

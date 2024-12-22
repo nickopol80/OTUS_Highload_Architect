@@ -1,0 +1,27 @@
+{{define "editPost"}}
+{{template "header" .Customer}}
+<main class="px-3">
+    <h1 class="cover-heading">Редактировать статью</h1>
+    <form method="POST" action="/post/update/{{.Post.Id}}">
+        <div class="mb-3">
+            <label for="userId" class="form-label">User ID</label>
+            <input type="number" class="form-control" id="userId" name="userId" value="{{.Customer.Id}}" readonly>
+        </div>
+        <div class="mb-3">
+            <label for="title" class="form-label">Заголовок</label>
+            <input type="text" class="form-control" id="title" name="title" value="{{.Post.Title}}" required>
+        </div>
+        <div class="mb-3">
+            <label for="anons" class="form-label">Анонс</label>
+            <input type="text" class="form-control" id="anons" name="anons" value="{{.Post.Anons}}" required>
+        </div>
+        <div class="mb-3">
+            <label for="text" class="form-label">Текст</label>
+            <textarea class="form-control" id="text" name="text" rows="5" required>{{.Post.Text}}</textarea>
+        </div>
+        <button type="submit" class="btn btn-warning">Сохранить</button>
+        <a href="/" class="btn btn-danger">Отмена</a>
+    </form>
+</main>
+{{template "footer"}}
+{{end}}

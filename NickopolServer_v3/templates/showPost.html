@@ -1,0 +1,32 @@
+{{define "showPost"}}
+{{template "header" .Customer}}
+<main class="px-3">
+<h1 class="cover-heading">{{.Post.Title}}</h1>
+<!-- <p>IsAuthorized: {{.Customer.IsAuthorized}}</p>
+<p>Post_Id: {{.Post.Id}}</p> -->
+    <div class="alert alert-primary">
+        <p class="lead">{{.Post.Text}}</p>
+        <p class="lead">User_Id: {{.Post.UserId}}</p>
+        {{if eq .Customer.IsAuthorized true}}
+            <p class="lead">
+                <form method="GET" action="/" style="display:inline;">
+                    <button type="submit" class="btn btn-warning">Назад</button>
+                </form>
+                <form method="GET" action="/post/edit/{{.Post.Id}}" style="display:inline;">
+                    <button type="submit" class="btn btn-info">Редактировать</button>
+                </form>
+                <form method="POST" action="/post/delete/{{.Post.Id}}" style="display:inline;">
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+            </p>
+        {{else}}
+            <p class="lead">
+                <form method="GET" action="/" style="display:inline;">
+                    <button type="submit" class="btn btn-warning">Назад</button>
+                </form>
+            </p>
+        {{end}}
+    </div>
+</main>
+{{template "footer"}}
+{{end}}
