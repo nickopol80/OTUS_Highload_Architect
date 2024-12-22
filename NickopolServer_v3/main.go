@@ -392,6 +392,66 @@ func showPost(w http.ResponseWriter, r *http.Request) {
 	t.ExecuteTemplate(w, "showPost", data)
 }
 
+func postFeed(w http.ResponseWriter, r *http.Request) {
+	userID := customer.Id
+	// log.Printf("Текущий userID: %v", userID)
+
+	// Проверяем, что userID имеет значение
+	if userID == "" {
+		log.Println("userID не задан. Перенаправление на страницу входа.")
+		http.Redirect(w, r, "/login", http.StatusSeeOther) // Перенаправление на /login
+		return
+	}
+
+    db := getReplicaDB()
+    if db == nil {
+		http.Error(w, "База данных временно недоступна", http.StatusInternalServerError)
+		return
+    }
+
+    // SQL-запрос для выборки постов друзей
+    query := `
+        SELECT a.id, a.title, a.text, a.user_id
+        FROM articles a
+        JOIN friends f ON f.friend_id = a.user_id
+        WHERE f.user_id = ?
+        ORDER BY a.id DESC
+    `
+    res, err := db.Query(query, userID)
+    if err != nil {
+        log.Printf("Ошибка выполнения SQL-запроса: %v", err)
+        http.Error(w, "Ошибка загрузки ленты", http.StatusInternalServerError)
+        return
+    }
+    defer res.Close()
+
+
+	var posts = []Article{} //Чтоб не дублировались одни и теже посты при обновлении страницы
+	for res.Next() {
+		var post Article
+		err = res.Scan(&post.Id, &post.Title, &post.Text, &post.UserId)
+		if err != nil {
+			log.Printf("Ошибка обработки данных: %v", err)
+            http.Error(w, "Ошибка загрузки ленты", http.StatusInternalServerError)
+            return
+		}
+		// log.Printf("Посты друзей: %+v", post)
+		posts = append(posts, post)
+	}
+
+	var data = DataPage{Customer: customer, Posts: posts}
+
+    // Отображение шаблона
+    tmpl, err := template.ParseFiles("templates/postFeed.html", "templates/header.html", "templates/footer.html")
+    if err != nil {
+        log.Printf("Ошибка загрузки шаблона: %v", err)
+        http.Error(w, "Ошибка отображения страницы", http.StatusInternalServerError)
+        return
+    }
+
+    tmpl.ExecuteTemplate(w, "postFeed", data)
+}
+
 func showUserForm(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r) //Вытаскиваем все параметры из запроса
 	// w.WriteHeader(http.StatusOK)
@@ -682,7 +742,7 @@ func users(w http.ResponseWriter, r *http.Request) {
 }
 
 func friends(w http.ResponseWriter, r *http.Request) {
-	userID := customer.Id // Предполагается, что это число или строка
+	userID := customer.Id
 
 	// Проверяем, что userID имеет значение
 	if userID == "" { // Если строка
@@ -812,9 +872,10 @@ func handleFunc() {
 	rtr.HandleFunc("/get_user", getUser)
 	rtr.HandleFunc("/post/{id:[0-9]+}", showPost).Methods("GET", "PUT")
 	rtr.HandleFunc("/post/create", postCreate).Methods("GET")
-	rtr.HandleFunc("/post/edit/{id:[0-9]+}", editPostForm).Methods("GET") // Редактирование статьи
+	rtr.HandleFunc("/post/edit/{id:[0-9]+}", editPostForm).Methods("GET") 	// Редактирование статьи
 	rtr.HandleFunc("/post/update/{id:[0-9]+}", postUpdate).Methods("POST")  // Обновление статьи
 	rtr.HandleFunc("/post/delete/{id:[0-9]+}", postDelete).Methods("POST")
+	rtr.HandleFunc("/post/feed", postFeed).Methods("GET")				// Просмотр статей друзей
 	rtr.HandleFunc("/save_article", saveArticle).Methods("POST")
 	rtr.HandleFunc("/userForm/{id:[0-9]+}", showUserForm).Methods("GET")
 	rtr.HandleFunc("/users", users).Methods("GET")

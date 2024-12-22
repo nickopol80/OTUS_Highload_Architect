@@ -1,0 +1,22 @@
+{{define "postFeed"}}
+{{template "header" .Customer}}
+<main class="px-3">
+    <h1 class="cover-heading">Лента постов друзей</h1>
+    {{if .Posts}}
+        {{range .Posts}}
+        <div class="post">
+            <h2>{{.Title}}</h2>
+            <p>{{.Text}}</p>
+            <p><small>Автор Id: {{.UserId}}</small></p>
+        </div>
+        <hr>
+        {{end}}
+        <div>
+            <a class="btn btn-warning" href="/friends" class="button" style="margin-top: 20px;">Список друзей</a>
+        </div>
+    {{else}}
+        <p>Нет постов от друзей.</p>
+    {{end}}
+</main>
+{{template "footer"}}
+{{end}}
