@@ -6,152 +6,321 @@
 		"_exporter_id": "15193830"
 	},
 	"item": [
-		{
-			"name": "Главная страница",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:8080",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080"
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Авторизация",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "formdata",
-					"formdata": [
-						{
-							"key": "email",
-							"value": "tor@mail.ru",
-							"type": "text"
-						},
-						{
-							"key": "password",
-							"value": "12345",
-							"type": "text"
-						}
-					]
-				},
-				"url": {
-					"raw": "http://localhost:8080/get_user",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"get_user"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Добавление статьи",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "formdata",
-					"formdata": [
-						{
-							"key": "title",
-							"value": "Название статьи",
-							"type": "text"
-						},
-						{
-							"key": "anons",
-							"value": "Анонс статьи",
-							"type": "text"
-						},
-						{
-							"key": "text",
-							"value": "Полный текст статьи",
-							"type": "text"
-						}
-					]
-				},
-				"url": {
-					"raw": "http://localhost:8080/save_article",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"save_article"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Просмотреть все анкеты пользователей (краткая инфо)",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:8080/usersForms",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"usersForms"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Просмотреть анкету пользователя с id =1",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:8080/userForm/1",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"userForm",
-						"1"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Logout",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:8080/logout",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"logout"
-					]
-				}
-			},
-			"response": []
-		}
-	]
+        {
+            "name": "Home",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        ""
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Users Forms",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/usersForms",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "usersForms"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Login",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/login",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "login"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Logout",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/logout",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "logout"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Registration Form",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/registration_form",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "registration_form"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Registration",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/registration",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "registration"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Get User",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/get_user",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "get_user"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Show Post",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/post/1",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "post",
+                        "1"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Edit Post Form",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/post/edit/1",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "post",
+                        "edit",
+                        "1"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Update Post",
+            "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/post/update/1",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "post",
+                        "update",
+                        "1"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Delete Post",
+            "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/post/delete/1",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "post",
+                        "delete",
+                        "1"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Post Feed",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/post/feed",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "post",
+                        "feed"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Post Create",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/post/create",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "post",
+                        "create"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Save Article",
+            "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/save_article",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "save_article"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Show User Form",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/userForm/1",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "userForm",
+                        "1"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Users",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/users",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "users"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Search Users",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/users/search",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "users",
+                        "search"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Friends",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/friends",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "friends"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Friend Action",
+            "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/friends/action",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "friends",
+                        "action"
+                    ]
+                }
+            }
+        }
+    ]
 }
